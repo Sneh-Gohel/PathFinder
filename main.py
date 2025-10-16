@@ -2,6 +2,7 @@
 
 import pygame
 import sys
+import time
 from grid import Grid
 from algorithms import BFS, AStar
 from ui import UI
@@ -53,7 +54,22 @@ def main():
         if ui.algorithm_running and ui.current_algorithm:
             finished = ui.current_algorithm.run_step()
             if finished:
+                # Algorithm finished - show result and generate PDF
                 ui.algorithm_running = False
+                ui.current_algorithm.end_time = time.time()
+                
+                if ui.current_algorithm.found:
+                    ui.message.show(f"Path found! Length: {ui.current_algorithm.path_length}", GREEN)
+                    # Generate PDF report
+                    pdf_filename = ui.current_algorithm.generate_pdf_report(type(ui.current_algorithm).__name__)
+                    ui.message.show(f"PDF report generated: {pdf_filename}", LIGHT_BLUE, 5000)
+                else:
+                    ui.message.show("No path found!", RED)
+                    # Generate PDF report even if no path found
+                    pdf_filename = ui.current_algorithm.generate_pdf_report(type(ui.current_algorithm).__name__)
+                    ui.message.show(f"PDF report generated: {pdf_filename}", LIGHT_BLUE, 5000)
+                
+                ui.clear_algorithm_buttons()
         
         # Draw everything
         screen.fill(WHITE)

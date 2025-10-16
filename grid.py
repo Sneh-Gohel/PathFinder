@@ -22,20 +22,34 @@ class Cell:
         # Draw cell background
         pygame.draw.rect(screen, self.color, (self.x, self.y, CELL_SIZE, CELL_SIZE))
         
-        # Draw cell border
-        pygame.draw.rect(screen, GRAY, (self.x, self.y, CELL_SIZE, CELL_SIZE), 1)
+        # Draw cell border (lighter for better visual)
+        border_color = (220, 220, 220) if not (self.visited or self.in_frontier or self.in_path) else self.color
+        pygame.draw.rect(screen, border_color, (self.x, self.y, CELL_SIZE, CELL_SIZE), 1)
         
         # Draw wall if present
         if self.wall:
             pygame.draw.rect(screen, BLACK, (self.x, self.y, CELL_SIZE, CELL_SIZE))
+            # Add texture to walls
+            for i in range(0, CELL_SIZE, 3):
+                pygame.draw.line(screen, DARK_GRAY, 
+                               (self.x, self.y + i), 
+                               (self.x + CELL_SIZE, self.y + i), 1)
         
-        # Draw special markers
+        # Draw special markers with highlights
         if self.start:
             pygame.draw.rect(screen, RED, (self.x, self.y, CELL_SIZE, CELL_SIZE))
+            # Add highlight
+            pygame.draw.rect(screen, (255, 150, 150), (self.x + 2, self.y + 2, CELL_SIZE - 4, CELL_SIZE - 4))
+            pygame.draw.rect(screen, RED, (self.x + 4, self.y + 4, CELL_SIZE - 8, CELL_SIZE - 8))
         elif self.goal:
             pygame.draw.rect(screen, YELLOW, (self.x, self.y, CELL_SIZE, CELL_SIZE))
+            # Add highlight
+            pygame.draw.rect(screen, (255, 255, 150), (self.x + 2, self.y + 2, CELL_SIZE - 4, CELL_SIZE - 4))
+            pygame.draw.rect(screen, YELLOW, (self.x + 4, self.y + 4, CELL_SIZE - 8, CELL_SIZE - 8))
         elif self.in_path:
             pygame.draw.rect(screen, GREEN, (self.x, self.y, CELL_SIZE, CELL_SIZE))
+            # Add animation effect
+            pygame.draw.rect(screen, (150, 255, 150), (self.x + 2, self.y + 2, CELL_SIZE - 4, CELL_SIZE - 4))
         elif self.in_frontier:
             pygame.draw.rect(screen, ORANGE, (self.x, self.y, CELL_SIZE, CELL_SIZE))
         elif self.visited:
@@ -68,6 +82,11 @@ class Grid:
         self.goal_pos = None
     
     def draw(self, screen):
+        # Draw grid background
+        grid_rect = pygame.Rect(0, UI_HEIGHT, WINDOW_WIDTH - SIDEBAR_WIDTH, WINDOW_HEIGHT - UI_HEIGHT)
+        pygame.draw.rect(screen, (245, 245, 245), grid_rect)
+        
+        # Draw cells
         for row in self.cells:
             for cell in row:
                 cell.draw(screen)
@@ -75,7 +94,7 @@ class Grid:
     def get_cell(self, pos):
         """Get cell at mouse position"""
         x, y = pos
-        if y < UI_HEIGHT:
+        if y < UI_HEIGHT or x > WINDOW_WIDTH - SIDEBAR_WIDTH:
             return None
         
         row = (y - UI_HEIGHT) // CELL_SIZE
@@ -169,7 +188,6 @@ class Grid:
             new_row, new_col = start_row + dr, start_col + dc
             if 0 <= new_row < self.rows and 0 <= new_col < self.cols:
                 frontiers.append((new_row, new_col))
-                self.cells[new_row][new_col].color = ORANGE  # Mark as frontier
         
         while frontiers:
             # Pick a random frontier cell
@@ -198,7 +216,6 @@ class Grid:
                     new_row, new_col = row + dr, col + dc
                     if 0 <= new_row < self.rows and 0 <= new_col < self.cols and self.cells[new_row][new_col].wall:
                         frontiers.append((new_row, new_col))
-                        self.cells[new_row][new_col].color = ORANGE
         
         # Set start and goal at opposite corners
         self.set_start(self.cells[0][0])
